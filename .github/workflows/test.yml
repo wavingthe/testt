@@ -5,7 +5,7 @@ on:
   
 jobs:
   running:
-    runs-on: windows-server
+    runs-on: windows-latest-l
       
     steps:
       - name: Credential
