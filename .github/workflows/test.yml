@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   
 jobs:
-  build:
+  running:
     runs-on: windows-myrun
       
     steps:
