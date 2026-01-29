@@ -5,7 +5,7 @@ on:
 
 jobs:
   running:
-    runs-on: windows-latest
+    runs-on: windows-late
     timeout-minutes: 360
 
     steps:
