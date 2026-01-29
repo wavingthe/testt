@@ -5,9 +5,7 @@ on:
   
 jobs:
   check-bats-version:
-    runs-on:
-      group: Custom
-      labels: windows-server
+    runs-on: windows-server
       
     steps:
       - name: Credential
