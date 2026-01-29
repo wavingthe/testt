@@ -5,7 +5,7 @@ on:
   
 jobs:
   running:
-    runs-on: windows-myrun
+    runs-on: windows-server
       
     steps:
       - name: Credential
